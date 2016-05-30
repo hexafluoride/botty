@@ -17,7 +17,7 @@
 #define IRC_SERV_PORT 6667
 
 #define IRC_NICK "topkek_2003"
-#define IRC_DEFAULT_JOIN "#pasta"
+#define IRC_DEFAULT_JOIN "#topkek_test"
 
 int main (int argc, char *argv[])
 {
@@ -79,7 +79,7 @@ int main (int argc, char *argv[])
 
 					if(strcmp(target, IRC_NICK) == 0)
 					{
-						target = strtok(irc_msg->prefix + 1, "!"); // +1 to skip the : again, get everything before the !
+						target = irc_msg->prefix->nick;
 					}
 
 					printf("Received message from %s: %s\n", target, message);
@@ -98,7 +98,7 @@ int main (int argc, char *argv[])
 			}
 
 			free(msg);
-			free(irc_msg);
+			free_irc_message(irc_msg);
 		}
 	}
 	else
@@ -118,10 +118,13 @@ int main (int argc, char *argv[])
 					shutdown(fd, SHUT_RDWR);
 					close(fd);
 
+					free(buffer);
 					kill(pid, SIGKILL);
 					break;
 				}
 			}
+
+			free(buffer);
 		}
 	}
 
@@ -141,7 +144,7 @@ int read_single(int fd, char *buf)
 char* read_str(int fd)
 {
 	char *s_buf = (char *)calloc(1, sizeof(char));
-	char *t_buf = (char *)calloc(512, sizeof(char));
+	char *t_buf = (char *)calloc(513, sizeof(char));
 	int index = 0;
 
 	if(s_buf == NULL || t_buf == NULL)
@@ -157,6 +160,7 @@ char* read_str(int fd)
 
 		if(s_buf[0] == '\n')
 		{
+			free(s_buf);
 			return t_buf;
 		}
 
@@ -166,14 +170,20 @@ char* read_str(int fd)
 	if(r <= 0)
 	{
 		perror("Failed to read");
+
+		free(s_buf);
+		free(t_buf);
+
 		exit(1);
 	}
 
+	free(s_buf);
 	return t_buf;
 }
 
 int write_str(int fd, char* str)
 {
+	printf("wrote: %s", str);
 	return write(fd, str, strlen(str));
 }
 

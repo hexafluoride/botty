@@ -13,14 +13,14 @@
 
 irc_message* parse_message(char *line)
 {
-	char *part = strtok(line, " ");
+	char *save_pointer;
+	char *part = strtok_r(line, " ", &save_pointer);
 	irc_message *msg = (irc_message *)calloc(1, sizeof(irc_message));
 
 	if(part[0] == ':')
 	{
-		msg->prefix = alloc_ptr(part);
-		strcpy(msg->prefix, part);
-		part = strtok(NULL, " ");
+		msg->prefix = parse_prefix(part);
+		part = strtok_r(NULL, " ", &save_pointer);
 	}
 
 	uintmax_t num = strtoumax(part, NULL, 10);
@@ -34,7 +34,7 @@ irc_message* parse_message(char *line)
 		strcpy(msg->command, part);
 	}
 
-	char* remainder = strtok(NULL, "\r");
+	char* remainder = strtok_r(NULL, "\r", &save_pointer);
 
 	msg->params = alloc_ptr(remainder);
 	strcpy(msg->params, remainder);
@@ -48,8 +48,7 @@ irc_message* create_message(char *prefix, char *command, int command_id, char *p
 
 	if(prefix != NULL)
 	{
-		msg->prefix = alloc_ptr(prefix);
-		strcpy(msg->prefix, prefix);
+		msg->prefix = parse_prefix(prefix);
 	}
 
 	if(command != NULL)
@@ -72,6 +71,83 @@ irc_message* create_message(char *prefix, char *command, int command_id, char *p
 	return msg;
 }
 
+irc_prefix* create_prefix(char *nick, char *user, char *host)
+{
+	irc_prefix *ret = (irc_prefix *)calloc(1, sizeof(irc_prefix));
+	char *buffer = (char *)calloc(513, sizeof(char));
+
+	if(nick != NULL)
+	{
+		ret->nick = alloc_ptr(nick);
+		strcpy(ret->nick, nick);
+
+		strcat(buffer, nick);
+		strcat(buffer, "!");
+	}
+	if(user != NULL)
+	{
+		ret->user = alloc_ptr(user);
+		strcpy(ret->user, user);
+
+		strcat(buffer, user);
+		strcat(buffer, "@");
+	}
+
+	ret->host = alloc_ptr(host);
+	strcpy(ret->host, host);
+
+	strcat(buffer, host);
+
+	ret->raw_prefix = alloc_ptr(buffer);
+	strcpy(ret->raw_prefix, buffer);
+	free(buffer);
+
+	return ret;
+}
+
+irc_prefix* parse_prefix(char *prefix)
+{
+	irc_prefix *ret;
+	char *save_pointer;
+
+	if(strstr(prefix, "!") == NULL)
+	{
+		ret = create_prefix(NULL, NULL, prefix);
+		return ret;
+	}
+
+	char *nick = strtok_r(prefix, "!", &save_pointer);
+	char *user = strtok_r(NULL, "@", &save_pointer);
+	char *host = strtok_r(NULL, "", &save_pointer);
+
+	ret = create_prefix(nick, user, host);
+
+	return ret;
+}
+
+void free_irc_prefix(irc_prefix *prefix)
+{
+	if(prefix == NULL)
+		return;
+
+	free(prefix->raw_prefix);
+	free(prefix->nick);
+	free(prefix->user);
+	free(prefix->host);
+	free(prefix);
+}
+
+void free_irc_message(irc_message *msg)
+{
+	if(msg == NULL)
+		return;
+
+	free_irc_prefix(msg->prefix);
+	free(msg->command);
+	free(msg->params);
+	free(msg);
+}
+
 void send_quit(int fd, char *reason)
 {
 	char *buf = (char *)calloc(513, sizeof(char));
@@ -79,14 +155,14 @@ void send_quit(int fd, char *reason)
 	strcat(buf, ":");
 	strcat(buf, reason);
 
-	send_message(fd, create_message(NULL, "QUIT", 0, buf));
+	send_message_and_free(fd, create_message(NULL, "QUIT", 0, buf));
 
 	free(buf);
 }
 
 void send_join(int fd, char *channel)
 {
-	send_message(fd, create_message(NULL, "JOIN", 0, channel));
+	send_message_and_free(fd, create_message(NULL, "JOIN", 0, channel));
 }
 
 void send_privmsg(int fd, char *target, char *message)
@@ -97,14 +173,14 @@ void send_privmsg(int fd, char *target, char *message)
 	strcat(buf, " :");
 	strcat(buf, message);
 
-	send_message(fd, create_message(NULL, "PRIVMSG", 0, buf));
+	send_message_and_free(fd, create_message(NULL, "PRIVMSG", 0, buf));
 
 	free(buf);
 }
 
 void send_pong(int fd, irc_message *ping)
 {
-	send_message(fd, create_message(NULL, "PONG", 0, ping->params));
+	send_message_and_free(fd, create_message(NULL, "PONG", 0, ping->params));
 }
 
 void send_message(int fd, irc_message *msg)
@@ -113,7 +189,7 @@ void send_message(int fd, irc_message *msg)
 
 	if(msg->prefix != NULL)
 	{
-		strcat(buf, msg->prefix);
+		strcat(buf, msg->prefix->raw_prefix);
 		strcat(buf, " ");
 	}
 
@@ -142,4 +218,10 @@ void send_message(int fd, irc_message *msg)
 	write_str(fd, buf);
 
 	free(buf);
+}
+
+void send_message_and_free(int fd, irc_message *msg)
+{
+	send_message(fd, msg);
+	free_irc_message(msg);
 }
