@@ -2,8 +2,12 @@
 Tiny IRC bot written in C using Unix sockets.
 
 ## Building
-Needs `mdtool` to compile.
 Just run
+
+    make
+    botty/botty
+    
+at the project root. Alternatively, if you have `mdtool` installed, you can do 
 
     mdtool build 
     botty/bin/Debug/botty
@@ -13,7 +17,7 @@ or
     mdtool build -c:Release
     botty/bin/Release/botty
 
-at the project root.
+for different configurations.
 
 ## Configuration
 At this moment, configuration is done via `#define` preprocessor directives. I might implement an actual configuration file in the future(but not the foreseeable future).
