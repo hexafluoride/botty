@@ -2,15 +2,15 @@
 Tiny IRC bot written in C using Unix sockets.
 
 ## Building
-Needs `xbuild` to compile.
+Needs `mdtool` to compile.
 Just run
 
-    xbuild 
+    mdtool build 
     botty/bin/Debug/botty
 
 or
 
-    xbuild /p:Configuration=Release
+    mdtool build -c:Release
     botty/bin/Release/botty
 
 at the project root.
