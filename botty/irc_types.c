@@ -178,6 +178,11 @@ void send_privmsg(int fd, char *target, char *message)
 	free(buf);
 }
 
+void send_action(int fd, char *target, char *message)
+{
+	send_privmsg(fd, target, strcat("ACTION", strcat(message, "")));
+}
+
 void send_pong(int fd, irc_message *ping)
 {
 	send_message_and_free(fd, create_message(NULL, "PONG", 0, ping->params));

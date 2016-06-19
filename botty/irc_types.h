@@ -30,6 +30,7 @@ void send_pong(int fd, irc_message *ping);
 void send_message(int fd, irc_message *msg);
 void send_message_and_free(int fd, irc_message *msg);
 void send_privmsg(int fd, char *target, char *message);
+void send_action(int fd, char *target, char *message);
 void send_join(int fd, char *channel);
 void send_quit(int fd, char *reason);
 

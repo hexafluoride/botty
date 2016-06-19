@@ -9,18 +9,25 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
+
 #include "main.h"
 #include "irc_types.h"
 
 // define these before compiling
-#define IRC_SERV_ADDR "irc.rizon.io"
-#define IRC_SERV_PORT 6667
+#define IRC_SERV_ADDR "irc.rizon.net"
+#define IRC_SERV_PORT 6697
 
 #define IRC_NICK "topkek_2003"
-#define IRC_DEFAULT_JOIN "#topkek_test"
+#define IRC_DEFAULT_JOIN "#topkek-test"
 
-int main (int argc, char *argv[])
+#define SSL_ENABLED
+
+SSL *ssl;
+
+int connect_irc()
 {
+	srand(time(NULL));
+
 	struct sockaddr_in server;
 	struct hostent *server_name;
 
@@ -47,8 +54,26 @@ int main (int argc, char *argv[])
 		exit(1);
 	}
 
+	#ifdef SSL_ENABLED
+	ssl = ssl_init();
+	SSL_set_fd(ssl, fd);
+
+	if(SSL_connect(ssl) != 1)
+	{
+		perror("SSL connection error");
+		exit(1);
+	}
+	#endif
+
 	write_str(fd, "NICK "IRC_NICK"\r\n");
 	write_str(fd, "USER botty botty "IRC_SERV_ADDR" :botty\r\n");
+
+	return fd;
+}
+
+int main (int argc, char *argv[])
+{
+	int fd = connect_irc();
 
 	int pid = fork();
 
@@ -131,6 +156,37 @@ int main (int argc, char *argv[])
 	return 0;
 }
 
+int get_random(int min, int max)
+{
+	return (rand() % (max - min)) + min;
+}
+
+SSL* ssl_init()
+{
+	OpenSSL_add_all_algorithms();
+	ERR_load_BIO_strings();
+	ERR_load_crypto_strings();
+	SSL_load_error_strings();
+
+	if(SSL_library_init() < 0)
+	{
+		perror("Failed to init SSL");
+		return NULL;
+	}
+
+	const SSL_METHOD *method = SSLv23_client_method();
+	SSL_CTX *ctx = SSL_CTX_new(method);
+
+	if(ctx == NULL)
+	{
+		perror("Failed to init CTX");
+		return NULL;
+	}
+
+	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
+	return SSL_new(ctx);
+}
+
 char* alloc_ptr(char *string)
 {
 	return (char *)calloc(strlen(string) + 1, sizeof(char));
@@ -138,6 +194,9 @@ char* alloc_ptr(char *string)
 
 int read_single(int fd, char *buf)
 {
+	#ifdef SSL_ENABLED
+	return SSL_read(ssl, buf, 1);
+	#endif
 	return read(fd, buf, 1);
 }
 
@@ -184,6 +243,9 @@ char* read_str(int fd)
 int write_str(int fd, char* str)
 {
 	printf("wrote: %s", str);
+	#ifdef SSL_ENABLED
+	return SSL_write(ssl, str, strlen(str));
+	#endif
 	return write(fd, str, strlen(str));
 }
 
