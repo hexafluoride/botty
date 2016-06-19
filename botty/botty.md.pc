@@ -1,5 +1,0 @@
-Name: botty
-Description: 
-Version: 0.1
-Libs: -L"/home/hexafluoride/botty/botty/bin/Debug" -lbotty
-Cflags: -I"/home/hexafluoride/botty/botty"
