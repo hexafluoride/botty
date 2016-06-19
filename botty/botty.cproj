@@ -22,7 +22,7 @@
     <OutputPath>bin\Debug</OutputPath>
     <Externalconsole>true</Externalconsole>
     <OutputName>botty</OutputName>
-    <CompileTarget>Bin</CompileTarget>
+    <CompileTarget>SharedLibrary</CompileTarget>
     <DefineSymbols>DEBUG MONODEVELOP</DefineSymbols>
     <SourceDirectory>.</SourceDirectory>
   </PropertyGroup>
