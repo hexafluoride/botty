@@ -25,7 +25,9 @@ At this moment, configuration is done via `#define` preprocessor directives. I m
 ## Features
 Right now, all it does is connect to an IRC server, join a channel and say "Hello!". It will also respond to ".bots" with "Reporting in! [C]". This project is mainly a learning exercise so I don't see myself implementing a lot of features.
 
-Oh, it also has no memory leaks, _at all_. (as of commit [85708a](https://github.com/hexafluoride/botty/commit/85708a06999efa7427870106546da2a2e94ff251))
+<s>Oh, it also has no memory leaks, _at all_. (as of commit [85708a](https://github.com/hexafluoride/botty/commit/85708a06999efa7427870106546da2a2e94ff251))</s>
+
+Never mind, OpenSSL does a fairly good job at leaking lots of memory. However, without SSL, there are still no leaks.
 
     ==30443== HEAP SUMMARY:
     ==30443==     in use at exit: 0 bytes in 0 blocks
